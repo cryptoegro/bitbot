@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.5;
+pragma solidity 0.8.0;
 
 
 
@@ -148,11 +148,7 @@ library SafeMath {
 }
 
 interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
+    
     /**
      * @dev Returns the amount of tokens owned by `account`.
      */
@@ -220,7 +216,7 @@ interface IERC20 {
 
 
 abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
+    function _msgSender() internal view virtual returns (address) {
         return msg.sender;
     }
 
@@ -274,7 +270,7 @@ contract Ownable is Context {
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby removing any functionality that is only available to the owner.
      */
-    function renounceOwnership() public virtual onlyOwner {
+    function renounceOwnership() external onlyOwner {
         emit OwnershipTransferred(_owner, address(0));
         _owner = address(0);
     }
@@ -292,7 +288,7 @@ contract Ownable is Context {
      * @dev receive ownership of the contract by _newOwner. Previous owner assigned this _newOwner to receive ownership. 
      * Can only be called by the current _newOwner.
      */
-    function recieveOwnership() public virtual onlyMidWayOwner {
+    function recieveOwnership() external onlyMidWayOwner {
         emit OwnershipTransferred(_owner, _newOwner);
         _owner = _newOwner;
     }
@@ -305,13 +301,13 @@ contract ERC20 is Context, IERC20, Ownable {
 
     mapping (address => mapping (address => uint256)) private _allowances;
 
-    uint256 private _totalSupply;
+    uint256 public totalSupply;
 
-    string private _name;
-    string private _symbol;
-    uint8 private _decimals;
+    string public name;
+    string public symbol;
+    uint8 public immutable decimals;
     
-    uint256 public tfees = 5; //0.5% fees 5/1000
+    uint256 public constant tfees = 5; //0.5% fees 5/1000
     
      mapping(address => bool) public freeSender;
     mapping(address => bool) public freeReciever;
@@ -327,64 +323,26 @@ contract ERC20 is Context, IERC20, Ownable {
      * construction.
      */
     constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
-        _decimals = 18;
+        name = name_;
+        symbol = symbol_;
+        decimals = 18;
     }
 
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
-     * called.
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view returns (uint8) {
-        return _decimals;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
-    }
-
+    
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view override returns (uint256) {
+    function balanceOf(address account) external view override returns (uint256) {
         return _balances[account];
     }
     
-    function setFeeFreeSender(address _sender, bool _feeFree) public onlyOwner {
+    function setFeeFreeSender(address _sender, bool _feeFree) external onlyOwner {
         require(_sender != address(0), "ERC20: transfer from the zero address");
         require(!_feeFree || _feeFree, "Input must be a bool");
         freeSender[_sender] = _feeFree;
     }
 
-    function setFeelessReciever(address _recipient, bool _feeFree) public onlyOwner {
+    function setFeelessReciever(address _recipient, bool _feeFree) external onlyOwner {
         require(_recipient != address(0), "ERC20: transfer from the zero address");
         require(!_feeFree || _feeFree, "Input must be a bool");
         freeReciever[_recipient] = _feeFree;
@@ -398,7 +356,7 @@ contract ERC20 is Context, IERC20, Ownable {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -406,7 +364,7 @@ contract ERC20 is Context, IERC20, Ownable {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(address owner, address spender) external view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -417,7 +375,7 @@ contract ERC20 is Context, IERC20, Ownable {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(address spender, uint256 amount) external virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -435,7 +393,7 @@ contract ERC20 is Context, IERC20, Ownable {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) external virtual override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -453,7 +411,7 @@ contract ERC20 is Context, IERC20, Ownable {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) external virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
@@ -472,7 +430,7 @@ contract ERC20 is Context, IERC20, Ownable {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
@@ -497,10 +455,8 @@ contract ERC20 is Context, IERC20, Ownable {
 
         _beforeTokenTransfer(sender, recipient, amount);
         
-        uint256 amounToSend = amount; 
-        uint256 feesAmount = 0;
         
-        (amounToSend, feesAmount) = calculateFees(sender, recipient, amount);
+        (uint256 amounToSend, uint256 feesAmount) = calculateFees(sender, recipient, amount);
         
         if(feesAmount > 0){
             _balances[owner()] = _balances[owner()].add(feesAmount);
@@ -508,9 +464,9 @@ contract ERC20 is Context, IERC20, Ownable {
        }
         
 
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
+        _balances[sender] = _balances[sender].sub(amounToSend, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amounToSend);
+        emit Transfer(sender, recipient, amounToSend);
     }
     
     // to caclulate the amounts for recipient and distributer after fees have been applied
@@ -542,7 +498,7 @@ contract ERC20 is Context, IERC20, Ownable {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        _totalSupply = _totalSupply.add(amount);
+        totalSupply = totalSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
@@ -564,7 +520,7 @@ contract ERC20 is Context, IERC20, Ownable {
         _beforeTokenTransfer(account, address(0), amount);
 
         _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
-        _totalSupply = _totalSupply.sub(amount);
+        totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
 
@@ -589,17 +545,7 @@ contract ERC20 is Context, IERC20, Ownable {
         emit Approval(owner, spender, amount);
     }
 
-    /**
-     * @dev Sets {decimals} to a value other than the default one of 18.
-     *
-     * WARNING: This function should only be called from the constructor. Most
-     * applications that interact with token contracts will not expect
-     * {decimals} to ever change, and may work incorrectly if it does.
-     */
-    function _setupDecimals(uint8 decimals_) internal {
-        _decimals = decimals_;
-    }
-
+    
     /**
      * @dev Hook that is called before any transfer of tokens. This includes
      * minting and burning.
@@ -624,7 +570,7 @@ contract BitBotToken is ERC20 {
         _mint(msg.sender, 10000e18);
     }
 
-    function burn(uint256 amount) public {
+    function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
 }
