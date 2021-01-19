@@ -464,7 +464,7 @@ contract ERC20 is Context, IERC20, Ownable {
        }
         
 
-        _balances[sender] = _balances[sender].sub(amounToSend, "ERC20: transfer amount exceeds balance");
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
         _balances[recipient] = _balances[recipient].add(amounToSend);
         emit Transfer(sender, recipient, amounToSend);
     }
